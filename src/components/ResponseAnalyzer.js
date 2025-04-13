@@ -19,11 +19,6 @@ const ResponseAnalyzer = () => {
   const [score, setScore] = useState(0);
   const [readiness, setReadiness] = useState('');
   const [readinessClass, setReadinessClass] = useState('');
-  
-  // API provider state
-  const [selectedProvider, setSelectedProvider] = useState(
-    localStorage.getItem('aiProvider') || 'claude'
-  );
 
   // Check authentication state on mount
   useEffect(() => {
@@ -49,7 +44,7 @@ const ResponseAnalyzer = () => {
   // Extract score from analysis and set readiness status
   useEffect(() => {
     if (analysis) {
-      const scoreMatch = analysis.match(/Score:\s*(\d+)\/10/);
+      const scoreMatch = analysis.match(/Score:\s*(\d+)\/10/i);
       if (scoreMatch && scoreMatch[1]) {
         setScore(parseInt(scoreMatch[1], 10));
       }
@@ -143,17 +138,6 @@ const ResponseAnalyzer = () => {
     logAnalyticsEvent('logout');
   };
 
-  // Handle provider change
-  const handleProviderChange = (provider) => {
-    setSelectedProvider(provider);
-    apiService.setProvider(provider);
-    
-    // Log provider change
-    logAnalyticsEvent('select_ai_provider', {
-      provider: provider
-    });
-  };
-
   // Handle analysis request
   const handleAnalyze = async () => {
     if (!requirement.trim() || !response.trim()) {
@@ -181,7 +165,6 @@ const ResponseAnalyzer = () => {
     
     // Log analysis request start
     logAnalyticsEvent('analysis_started', {
-      provider: selectedProvider,
       requirement_length: requirement.length,
       response_length: response.length
     });
@@ -194,12 +177,11 @@ const ResponseAnalyzer = () => {
       setAnalysis(result);
       
       // Extract score for analytics
-      const scoreMatch = result.match(/Score:\s*(\d+)\/10/);
+      const scoreMatch = result.match(/Score:\s*(\d+)\/10/i);
       const extractedScore = scoreMatch && scoreMatch[1] ? parseInt(scoreMatch[1], 10) : 0;
       
       // Log successful analysis
       logAnalyticsEvent('analysis_completed', {
-        provider: selectedProvider,
         score: extractedScore
       });
       
@@ -213,7 +195,6 @@ const ResponseAnalyzer = () => {
         response,
         analysis: result,
         score: extractedScore,
-        provider: selectedProvider,
         timestamp: serverTimestamp()
       });
       
@@ -223,7 +204,6 @@ const ResponseAnalyzer = () => {
       
       // Log analysis error
       logAnalyticsEvent('analysis_error', {
-        provider: selectedProvider,
         error_message: err.message
       });
     } finally {
@@ -237,6 +217,33 @@ const ResponseAnalyzer = () => {
     if (score >= 6) return 'text-yellow-600';
     if (score > 0) return 'text-red-600';
     return 'text-gray-600';
+  };
+
+  // Helper function to extract sections from the analysis
+  const extractSection = (sectionName, fallback = []) => {
+    if (!analysis) return fallback;
+    
+    // Create different regex patterns based on section name
+    let regex;
+    if (sectionName === 'Strengths') {
+      regex = new RegExp(`${sectionName}:\\s*\\n(.*?)(?=\\n\\s*(?:Major gaps|Recommendations|The response|$))`, 's');
+    } else if (sectionName === 'Major gaps') {
+      regex = new RegExp(`${sectionName}:\\s*\\n(.*?)(?=\\n\\s*(?:Recommendations|The response|$))`, 's');
+    } else if (sectionName === 'Recommendations') {
+      regex = new RegExp(`Recommendations(?:\\s*for\\s*improvement)?:\\s*\\n(.*?)(?=\\n\\s*(?:The response|$))`, 's');
+    } else if (sectionName === 'Overall') {
+      regex = /(?:The response as written.*?)$/s;
+      const match = analysis.match(regex);
+      return match ? match[0] : '';
+    }
+    
+    const match = analysis.match(regex);
+    if (!match || !match[1]) return fallback;
+    
+    // Split by line and clean up items
+    return match[1].split('\n')
+      .map(item => item.trim())
+      .filter(item => item && item !== '-' && !item.match(/^\s*$/));
   };
   
   // Login Screen
@@ -289,18 +296,6 @@ const ResponseAnalyzer = () => {
             <span className="font-bold">{userUsage.used}</span>
             <span className="text-gray-500"> / </span>
             <span className="font-bold">{userUsage.limit}</span>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">AI Provider:</span>
-            <select
-              value={selectedProvider}
-              onChange={(e) => handleProviderChange(e.target.value)}
-              className="border border-gray-300 rounded-md text-sm py-1 px-2"
-            >
-              <option value="claude">Claude</option>
-              <option value="openai">OpenAI</option>
-            </select>
           </div>
           
           <button
@@ -392,42 +387,34 @@ const ResponseAnalyzer = () => {
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-3">Strengths:</h3>
               <div className="pl-4 border-l-4 border-green-500 bg-green-50 p-3 rounded-r-md">
-                {analysis.match(/Strengths:\n(.*?)(?=\n\n)/s) && 
-                  analysis.match(/Strengths:\n(.*?)(?=\n\n)/s)[1].split('\n').map((item, index) => (
-                    <div key={index} className="mb-1">{item}</div>
-                  ))
-                }
+                {extractSection('Strengths').map((item, index) => (
+                  <div key={index} className="mb-1">{item}</div>
+                ))}
               </div>
             </div>
             
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-3">Major Gaps:</h3>
               <div className="pl-4 border-l-4 border-red-500 bg-red-50 p-3 rounded-r-md">
-                {analysis.match(/Major gaps:\n(.*?)(?=\n\n)/s) && 
-                  analysis.match(/Major gaps:\n(.*?)(?=\n\n)/s)[1].split('\n').map((item, index) => (
-                    <div key={index} className="mb-1">{item}</div>
-                  ))
-                }
+                {extractSection('Major gaps').map((item, index) => (
+                  <div key={index} className="mb-1">{item}</div>
+                ))}
               </div>
             </div>
             
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-3">Recommendations:</h3>
               <div className="pl-4 border-l-4 border-blue-500 bg-blue-50 p-3 rounded-r-md">
-                {analysis.match(/Recommendations for improvement:\n(.*?)(?=\n\n)/s) && 
-                  analysis.match(/Recommendations for improvement:\n(.*?)(?=\n\n)/s)[1].split('\n').map((item, index) => (
-                    <div key={index} className="mb-1">{item}</div>
-                  ))
-                }
+                {extractSection('Recommendations').map((item, index) => (
+                  <div key={index} className="mb-1">{item}</div>
+                ))}
               </div>
             </div>
             
             <div className="mt-6 p-4 bg-gray-100 rounded-md">
               <h3 className="text-lg font-semibold mb-2">Overall Assessment:</h3>
               <p className="text-gray-700">
-                {analysis.match(/(?:The response as written.*?)$/s) && 
-                  analysis.match(/(?:The response as written.*?)$/s)[0]
-                }
+                {extractSection('Overall')}
               </p>
             </div>
           </div>
