@@ -167,6 +167,19 @@ yarn build
 firebase deploy
 ```
 
+   This single command from your project root will deploy all configured components:
+   - Frontend hosting files
+   - Firebase Functions 
+   - Firestore rules and indexes
+   - Storage rules (if configured)
+
+   For selective deployment during development, you can use:
+   ```bash
+   firebase deploy --only hosting       # Deploy just the frontend
+   firebase deploy --only functions     # Deploy all functions
+   firebase deploy --only functions:analyzeResponse  # Deploy a specific function
+   ```
+
 10. Your application is now live! Visit the URL displayed in the terminal.
 
 ## 9. Setting Up Firestore Security Rules
@@ -228,7 +241,27 @@ const { onCall } = require("firebase-functions/v2/https");
 3. Check "Hosting" to see deployment history and traffic metrics
 4. Set up Functions monitoring alerts in the Firebase Console
 
-## 12. Troubleshooting
+## 12. Understanding Deployment Process
+
+When you run `firebase deploy` from the project root:
+
+1. Firebase CLI reads your `firebase.json` configuration file
+2. It identifies all configured services (Functions, Hosting, Firestore, etc.)
+3. For Functions:
+   - Automatically locates code in the `/functions` directory
+   - Installs dependencies if needed
+   - Bundles and optimizes your code
+   - Uploads and deploys to the Firebase infrastructure
+4. For Hosting:
+   - Uploads files from your build/public directory
+   - Configures CDN and routing rules
+5. For Firestore/Storage:
+   - Applies security rules and index configurations
+6. All services are deployed together in a coordinated way
+
+This project-level deployment ensures consistency across all your Firebase services.
+
+## 13. Troubleshooting
 
 If you encounter issues during deployment:
 

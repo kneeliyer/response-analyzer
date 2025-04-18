@@ -291,12 +291,12 @@ const ResponseAnalyzer = () => {
   
   // Main application
   return (
-    <div className="p-6 max-w-5xl mx-auto bg-white rounded-lg shadow-lg">
+    <div className="p-6 max-w-7xl mx-auto bg-white rounded-lg shadow-lg">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-blue-700">Response Analyzer</h1>
+        <h1 className="text-3xl font-bold text-[#191919]">Response Analyzer</h1>
         
         <div className="flex items-center space-x-4">
-          <div className="text-sm bg-blue-50 p-2 rounded-md border border-blue-200">
+          <div className="text-sm bg-gray-100 p-2 rounded-md border border-gray-300">
             <span className="font-medium">Requests: </span>
             <span className="font-bold">{userUsage.used}</span>
             <span className="text-gray-500"> / </span>
@@ -313,29 +313,27 @@ const ResponseAnalyzer = () => {
       </div>
       
       <div className="grid md:grid-cols-2 gap-6 mb-6">
-        <div>
+        <div className="w-full">
           <label className="block text-gray-700 font-medium mb-2">
             Question/Requirement
           </label>
           <textarea
             value={requirement}
             onChange={(e) => setRequirement(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+            className="w-full h-[450px] px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#191919] shadow-sm"
             placeholder="Enter the question or requirement here"
-            rows={8}
           />
         </div>
         
-        <div>
+        <div className="w-full">
           <label className="block text-gray-700 font-medium mb-2">
             Your Response
           </label>
           <textarea
             value={response}
             onChange={(e) => setResponse(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+            className="w-full h-[450px] px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#191919] shadow-sm"
             placeholder="Enter your response here"
-            rows={8}
           />
         </div>
       </div>
@@ -343,7 +341,7 @@ const ResponseAnalyzer = () => {
       <button
         onClick={handleAnalyze}
         disabled={loading || userUsage.used >= userUsage.limit}
-        className="w-full py-3 px-6 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-blue-300 shadow-md transition duration-300"
+        className="w-full py-3 px-6 bg-[#191919] text-white font-medium rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-700 disabled:bg-gray-500 shadow-md transition duration-300"
       >
         {loading ? 
           <span className="flex items-center justify-center">
@@ -365,7 +363,7 @@ const ResponseAnalyzer = () => {
       
       {loading && (
         <div className="mt-8 p-10 flex flex-col items-center justify-center bg-white rounded-lg shadow-md">
-          <div className="w-16 h-16 border-t-4 border-b-4 border-blue-500 rounded-full animate-spin mb-4"></div>
+          <div className="w-16 h-16 border-t-4 border-b-4 border-[#191919] rounded-full animate-spin mb-4"></div>
           <p className="text-lg font-medium text-gray-700">Analyzing your response...</p>
           <p className="text-sm text-gray-500 mt-2">This may take a few moments</p>
         </div>
@@ -409,7 +407,7 @@ const ResponseAnalyzer = () => {
             
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-3">Recommendations:</h3>
-              <div className="pl-4 border-l-4 border-blue-500 bg-blue-50 p-3 rounded-r-md">
+              <div className="pl-4 border-l-4 border-[#191919] bg-gray-50 p-3 rounded-r-md">
                 {extractSection('Recommendations').map((item, index) => (
                   <div key={index} className="mb-1">{item}</div>
                 ))}
