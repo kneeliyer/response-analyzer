@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getAnalytics, logEvent } from 'firebase/analytics';
+import { getFunctions } from 'firebase/functions';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -19,6 +20,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const analytics = getAnalytics(app);
+const functions = getFunctions(app);
 
 // Helper function to log analytics events
 const logAnalyticsEvent = (eventName, eventParams = {}) => {
@@ -29,4 +31,4 @@ const logAnalyticsEvent = (eventName, eventParams = {}) => {
   }
 };
 
-export { auth, db, analytics, logAnalyticsEvent };
+export { auth, db, analytics, functions, logAnalyticsEvent };

@@ -163,15 +163,22 @@ const ResponseAnalyzer = () => {
     setLoading(true);
     setError('');
     
-    // Log analysis request start
-    logAnalyticsEvent('analysis_started', {
-      requirement_length: requirement.length,
-      response_length: response.length
-    });
+    // Log analysis request start with minimal data
+    logAnalyticsEvent('analysis_started', {});
     
     try {
-      // Call API service
-      const result = await apiService.analyzeResponse(requirement, response);
+      // Limit the length of requirement and response to reduce token usage
+      const maxChars = 8000; // Reasonable limit to prevent excessive token usage
+      const trimmedRequirement = requirement.length > maxChars 
+        ? requirement.substring(0, maxChars) + "..." 
+        : requirement;
+      
+      const trimmedResponse = response.length > maxChars 
+        ? response.substring(0, maxChars) + "..." 
+        : response;
+      
+      // Call API service with trimmed content
+      const result = await apiService.analyzeResponse(trimmedRequirement, trimmedResponse);
       
       // Update analysis state
       setAnalysis(result);
@@ -180,7 +187,7 @@ const ResponseAnalyzer = () => {
       const scoreMatch = result.match(/Score:\s*(\d+)\/10/i);
       const extractedScore = scoreMatch && scoreMatch[1] ? parseInt(scoreMatch[1], 10) : 0;
       
-      // Log successful analysis
+      // Log successful analysis with minimal data
       logAnalyticsEvent('analysis_completed', {
         score: extractedScore
       });
@@ -188,12 +195,12 @@ const ResponseAnalyzer = () => {
       // Increment usage counter
       await incrementUsage();
       
-      // Log analysis in Firestore
+      // Log minimal data in Firestore
       await addDoc(collection(db, 'analyses'), {
         userId: user.uid,
-        requirement,
-        response,
-        analysis: result,
+        // Store truncated versions to reduce Firestore storage costs
+        requirement: trimmedRequirement.substring(0, 1000),
+        response: trimmedResponse.substring(0, 1000),
         score: extractedScore,
         timestamp: serverTimestamp()
       });
@@ -202,10 +209,8 @@ const ResponseAnalyzer = () => {
       console.error('Analysis error:', err);
       setError(`Error: ${err.message}`);
       
-      // Log analysis error
-      logAnalyticsEvent('analysis_error', {
-        error_message: err.message
-      });
+      // Log analysis error with minimal data
+      logAnalyticsEvent('analysis_error', {});
     } finally {
       setLoading(false);
     }
